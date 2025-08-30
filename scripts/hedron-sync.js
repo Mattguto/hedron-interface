@@ -1,125 +1,74 @@
 const MODID = "hedron-interface";
 
-async function fromUuidSafe(uuid) {
-  try { return await fromUuid(uuid); } catch { return null; }
-}
-
-function readHedronSlots(hedronItem) {
-  const slots = hedronItem.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] };
-  const arr = [];
-  if (slots.core) arr.push(slots.core);
-  for (const f of (slots.fragments ?? [])) if (f) arr.push(f);
-  return arr;
-}
-
-function actorHedrons(actor) {
-  return actor.items.filter(i =>
-    i.type === "equipment" &&
-    (i.slug === "hedron-interface" || i.getFlag(MODID, "isHedronInterface") === true)
-  );
-}
-
-function indexGranted(actor) {
-  const bySource = { effects: new Map(), actions: new Map() };
-  for (const it of actor.items) {
-    const src = it.getFlag(MODID, "sourceUuid");
-    const kind = it.getFlag(MODID, "grantKind"); // "effect" | "action"
-    if (src && kind === "effect") bySource.effects.set(src, it);
-    if (src && kind === "action") bySource.actions.set(src, it);
-  }
-  return bySource;
-}
-
-function readGrants(emberDoc) {
-  const g = emberDoc.getFlag(MODID, "grant") ?? {};
-  const effects = Array.isArray(g.effects) ? g.effects : [];
-  const actions = Array.isArray(g.actions) ? g.actions : [];
-  return { effects, actions };
-}
-
-async function syncActor(actor) {
-  const hedrons = actorHedrons(actor);
-  if (!hedrons.length) return;
-
-  const emberUuids = [];
-  for (const hed of hedrons) emberUuids.push(...readHedronSlots(hed));
-  const embers = (await Promise.all(emberUuids.map(fromUuidSafe))).filter(Boolean);
-
-  const wantEffects = new Set();
-  const wantActions = new Set();
-  for (const ember of embers) {
-    const { effects, actions } = readGrants(ember);
-    effects.forEach(u => wantEffects.add(u));
-    actions.forEach(u => wantActions.add(u));
+class HedronItemSheet extends ItemSheet {
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      id: "hedron-interface-sheet",
+      classes: ["pf2e", "sheet", "item"],
+      template: `modules/${MODID}/templates/hedron-sheet.hbs`,
+      width: 400,
+      height: 500
+    });
   }
 
-  const granted = indexGranted(actor);
-
-  // Criar faltantes (Effects)
-  const toCreateEffects = [];
-  for (const effUuid of wantEffects) {
-    if (granted.effects.has(effUuid)) continue;
-    const effDoc = await fromUuidSafe(effUuid);
-    if (!effDoc) continue;
-    const data = effDoc.toObject();
-    data._id = undefined;
-    data.flags ??= {};
-    data.flags[MODID] ??= {};
-    data.flags[MODID].sourceUuid = effUuid;
-    data.flags[MODID].grantKind  = "effect";
-    data.name = data.name ?? `Hedron Effect`;
-    toCreateEffects.push(data);
+  async getData(options) {
+    const ctx = await super.getData(options);
+    // slots do Hedron
+    const slots = this.item.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] };
+    ctx.slots = {
+      core: slots.core ? await fromUuid(slots.core) : null,
+      fragments: await Promise.all((slots.fragments ?? [null, null]).map(f => f ? fromUuid(f) : null))
+    };
+    return ctx;
   }
-  if (toCreateEffects.length) await actor.createEmbeddedDocuments("Item", toCreateEffects);
 
-  // Criar faltantes (Actions)
-  const toCreateActions = [];
-  for (const actUuid of wantActions) {
-    if (granted.actions.has(actUuid)) continue;
-    const actDoc = await fromUuidSafe(actUuid);
-    if (!actDoc) continue;
-    const data = actDoc.toObject();
-    data._id = undefined;
-    data.flags ??= {};
-    data.flags[MODID] ??= {};
-    data.flags[MODID].sourceUuid = actUuid;
-    data.flags[MODID].grantKind  = "action";
-    data.name = data.name ?? `Hedron Action`;
-    toCreateActions.push(data);
+  activateListeners(html) {
+    super.activateListeners(html);
+    const item = this.item;
+
+    html.find(".slot").on("drop", async ev => {
+      ev.preventDefault();
+      const data = TextEditor.getDragEventData(ev.originalEvent ?? ev);
+      const uuid = data?.uuid ?? (data?.pack && data?.id ? `Compendium.${data.pack}.${data.id}` : null);
+      if (!uuid) return;
+
+      const doc = await fromUuid(uuid);
+      if (!doc) return;
+
+      const emberType = doc.getFlag(MODID, "type");
+      const slotKey = ev.currentTarget.dataset.slot;
+
+      if (slotKey === "core" && emberType !== "core")
+        return ui.notifications.error("Esse slot aceita apenas Core Ember Stone.");
+      if (slotKey.startsWith("fragment") && emberType !== "fragment")
+        return ui.notifications.error("Esse slot aceita apenas Ember Fragment.");
+
+      const slots = foundry.utils.deepClone(item.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] });
+      if (slotKey === "core") slots.core = uuid;
+      else {
+        const i = Number(slotKey.split("-")[1] ?? 0);
+        slots.fragments[i] = uuid;
+      }
+      await item.setFlag(MODID, "slots", slots);
+      this.render();
+    });
+
+    html.find(".remove").on("click", async ev => {
+      const uuid = ev.currentTarget.closest(".stone")?.dataset?.uuid;
+      const slots = foundry.utils.deepClone(item.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] });
+      if (slots.core === uuid) slots.core = null;
+      slots.fragments = (slots.fragments ?? [null, null]).map(f => f === uuid ? null : f);
+      await item.setFlag(MODID, "slots", slots);
+      this.render();
+    });
   }
-  if (toCreateActions.length) await actor.createEmbeddedDocuments("Item", toCreateActions);
-
-  // Remover órfãos
-  const toDeleteIds = [];
-  for (const [src, item] of granted.effects.entries()) if (!wantEffects.has(src)) toDeleteIds.push(item.id);
-  for (const [src, item] of granted.actions.entries()) if (!wantActions.has(src)) toDeleteIds.push(item.id);
-  if (toDeleteIds.length) await actor.deleteEmbeddedDocuments("Item", toDeleteIds);
 }
 
-async function syncAllActors() {
-  for (const a of game.actors.contents) await syncActor(a);
-}
-
+// registra a sheet só para Hedron
 Hooks.once("ready", () => {
-  // Sincroniza ao entrar
-  syncAllActors();
-
-  // Reage a mudanças em itens dentro de atores
-  Hooks.on("updateItem", async (item, changes) => {
-    try {
-      const actor = item.actor; if (!actor) return;
-      const flagChanged =
-        foundry.utils.getProperty(changes, `flags.${MODID}.slots`) !== undefined ||
-        foundry.utils.getProperty(changes, `flags.${MODID}.isHedronInterface`) !== undefined ||
-        foundry.utils.getProperty(changes, `flags.${MODID}.grant`) !== undefined ||
-        foundry.utils.getProperty(changes, `flags.${MODID}.type`) !== undefined ||
-        item.slug === "hedron-interface";
-      if (flagChanged) await syncActor(actor);
-    } catch (e) { console.error(`[${MODID}] updateItem sync error`, e); }
+  Items.registerSheet("pf2e", HedronItemSheet, {
+    types: ["equipment"],
+    makeDefault: false,
+    label: "Hedron Interface Sheet"
   });
-
-  Hooks.on("createItem", async item => item.actor && syncActor(item.actor));
-  Hooks.on("deleteItem", async item => item.actor && syncActor(item.actor));
-
-  Hooks.on("canvasReady", () => syncAllActors());
 });
