@@ -2,7 +2,7 @@
   "id": "hedron-interface",
   "title": "Anchor Links Pad + Hedron Interface (PF2e)",
   "description": "Lista pessoal de âncoras por jogador e item Hedron Interface com slots (PF2e) que aplicam efeitos/ações.",
-  "version": "1.5.0",
+  "version": "0.3.0",
   "compatibility": {
     "minimum": "11",
     "verified": "13"
