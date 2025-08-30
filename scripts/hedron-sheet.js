@@ -5,7 +5,7 @@ class HedronSheet extends ItemSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["pf2e", "item", "sheet", "hedron-interface"],
-      template: "modules/anchor-links-pad/templates/hedron-sheet.hbs",
+      template: "modules/hedron-interface/templates/hedron-sheet.hbs",
       width: 420,
       height: 420
     });
@@ -74,7 +74,7 @@ Hooks.once("init", () => {
     }
     get template() {
       const isHedron = this.item.slug === "hedron-interface" || this.item.getFlag("hedron", "isHedronInterface") === true;
-      return isHedron ? "modules/anchor-links-pad/templates/hedron-sheet.hbs" : super.template;
+      return isHedron ? "modules/hedron-interface/templates/hedron-sheet.hbs" : super.template;
     }
     async getData(options) {
       const isHedron = this.item.slug === "hedron-interface" || this.item.getFlag("hedron", "isHedronInterface") === true;
