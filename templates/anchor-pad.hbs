@@ -1,0 +1,45 @@
+<style>
+  #anchor-links-pad .pad { padding: 8px; display:flex; flex-direction:column; gap:8px;}
+  #anchor-links-pad .dropzone { border: 2px dashed var(--color-border-dark-tertiary); border-radius: 6px; padding: 10px; text-align:center; font-size:12px; opacity:.95; transition:.12s ease; }
+  #anchor-links-pad .dropzone.hover { opacity:1; border-color: var(--color-border-highlight); }
+  #anchor-links-pad ul { list-style:none; margin:0; padding:0; }
+  #anchor-links-pad .anchor-row { padding:6px 4px; border-bottom:1px solid var(--color-border-light-tertiary); }
+  #anchor-links-pad .row { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+  #anchor-links-pad .btns a { margin-left:8px; cursor:pointer; opacity:.85; }
+  #anchor-links-pad .btns a:hover { opacity:1; }
+  #anchor-links-pad .sub { color: var(--color-text-dark-secondary); font-size: 11px; margin-top:2px; word-break: break-all; }
+  #anchor-links-pad .toolbar { display:flex; gap:6px; }
+  #anchor-links-pad input[name="label"], #anchor-links-pad input[name="uuid"] { width:100%; }
+  #anchor-links-pad .footer { font-size:11px; opacity:.8; }
+  #anchor-links-pad .open-doc { background: var(--color-bg-option); border:1px solid var(--color-border-light-tertiary); border-radius:6px; padding:4px 8px; cursor:pointer; font:inherit; }
+  #anchor-links-pad .open-doc:hover { filter: brightness(1.05); }
+</style>
+
+<div class="pad" tabindex="0">
+  <div class="dropzone" draggable="false">
+    Arraste itens/atores/journals/compêndios aqui<br>(ou cole um UUID abaixo)
+  </div>
+
+  <div class="toolbar">
+    <input type="text" name="uuid" placeholder="Cole um UUID (ex.: Compendium...)" />
+    <input type="text" name="label" placeholder="Rótulo (opcional)" />
+    <button type="button" class="add-manual">Adicionar</button>
+  </div>
+
+  <ul class="list">
+    {{#each links as |l i|}}
+      <li class="anchor-row" data-idx="{{i}}">
+        <div class="row">
+          <button type="button" class="open-doc" data-uuid="{{l.uuid}}">{{l.label}}</button>
+          <div class="btns">
+            <a class="copy-uuid" data-uuid="{{l.uuid}}" title="Copiar @UUID">⧉</a>
+            <a class="del" title="Remover">✕</a>
+          </div>
+        </div>
+        <div class="sub">{{l.uuid}}</div>
+      </li>
+    {{/each}}
+  </ul>
+
+  <div class="footer">Sua lista é pessoal (salva no seu usuário).</div>
+</div>
