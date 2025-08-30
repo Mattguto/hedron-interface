@@ -1,7 +1,7 @@
-// Hedron UI — injeta a aba "Hedron" em qualquer ItemSheet (sem trocar a sheet do PF2e)
+// Hedron UI — injeta a aba "Hedron" em qualquer ItemSheet
 const MODID = "hedron-interface";
 
-// Compat v11–v13+: TextEditor e renderTemplate namespaced
+// Compat v11–v13: TextEditor e renderTemplate namespaced
 const TextEditorImpl =
   (foundry?.applications?.ux?.TextEditor?.implementation) ?? window.TextEditor;
 const renderTemplateImpl =
@@ -31,17 +31,47 @@ async function renderHedronTab(item) {
   return await renderTemplateImpl(`modules/${MODID}/templates/hedron-sheet.hbs`, ctx);
 }
 
-function bindTabSystemTabs(app, $html) {
+function bindAllTabsControllers(app, $html) {
   const tabs = app._tabs ?? [];
-  for (const t of tabs) {
-    try { t.bind($html); } catch (_) {}
+  for (const t of tabs) { try { t.bind($html); } catch (_) {} }
+}
+
+/** ativa a aba via controller; se não rolar, faz manual */
+function activateHedronTab(app, $btn, $section, dataGroup) {
+  let usedController = false;
+  const ctrls = app._tabs ?? [];
+  for (const t of ctrls) {
+    try {
+      const sameGroup = !dataGroup || t.options?.group === dataGroup || t.group === dataGroup;
+      if (sameGroup && (t.tabs?.includes?.("hedron-tab") || t.callback || true)) {
+        t.activate?.("hedron-tab");
+        usedController = true;
+      }
+    } catch (_) {}
+  }
+  if (!usedController) {
+    const $nav = $btn.closest(".sheet-navigation, nav.sheet-tabs, .sheet-tabs, .tabs");
+    const $container = $section.closest(".sheet-body, .sheet-content, section.sheet-body, form .sheet-body");
+
+    // marca botão ativo
+    $nav.find('[data-tab]').removeClass("active");
+    $btn.addClass("active");
+
+    // mostra/oculta seções do mesmo grupo
+    const selector = dataGroup ? `section.tab[data-group="${dataGroup}"]` : `section.tab`;
+    $container.find(selector).removeClass("active").hide();
+    $section.addClass("active").show();
   }
 }
 
-/** listeners da aba */
-function activateHedronTabListeners($root, item) {
+/** (re)liga listeners internos da aba (drop/remove) */
+function wireHedronInner($root, item, $section) {
+  // Evita duplicar
+  $root.off("drop.hedron");
+  $root.off("click.hedronRemove");
+
   // Drop handler
-  $root.find(".slot").on("drop", async (ev) => {
+  $root.on("drop.hedron", ".slot", async (ev) => {
     ev.preventDefault();
     const data = TextEditorImpl.getDragEventData(ev.originalEvent ?? ev);
     const uuid = data?.uuid ?? (data?.pack && data?.id ? `Compendium.${data.pack}.${data.id}` : null);
@@ -67,12 +97,13 @@ function activateHedronTabListeners($root, item) {
     await setSlots(item, slots);
 
     const html = await renderHedronTab(item);
-    $root.find('section.tab[data-tab="hedron-tab"]').html(html);
-    activateHedronTabListeners($root, item);
+    $section.html(html);
+    // re-wire dentro da aba recém-renderizada
+    wireHedronInner($section, item, $section);
   });
 
   // Remover
-  $root.find(".remove").on("click", async (ev) => {
+  $root.on("click.hedronRemove", ".remove", async (ev) => {
     const uuid = ev.currentTarget.closest(".stone")?.dataset?.uuid;
     const slots = foundry.utils.deepClone(getSlots(item));
     if (slots.core === uuid) slots.core = null;
@@ -80,8 +111,8 @@ function activateHedronTabListeners($root, item) {
     await setSlots(item, slots);
 
     const html = await renderHedronTab(item);
-    $root.find('section.tab[data-tab="hedron-tab"]').html(html);
-    activateHedronTabListeners($root, item);
+    $section.html(html);
+    wireHedronInner($section, item, $section);
   });
 }
 
@@ -95,39 +126,58 @@ Hooks.on("renderItemSheet", async (app, htmlEl) => {
     const $html = htmlEl instanceof HTMLElement ? $(htmlEl) : htmlEl;
 
     // 1) Navegação de abas (várias possibilidades por versão/tema)
-    const $nav = $html.find(".sheet-navigation .item-list, .sheet-tabs.buttons, nav.sheet-tabs, .tabs .item-list").first();
+    const $nav = $html.find(".sheet-navigation .item-list, .sheet-tabs .item-list, .sheet-tabs.buttons, nav.sheet-tabs, .tabs .item-list").first();
     if (!$nav.length) return;
 
-    // Descobre o data-group das abas existentes
-    const $anyTabBtn = $nav.find("[data-tab]").first();
-    const dataGroup = $anyTabBtn.attr("data-group");
+    // 2) Descobre grupo e um botão “modelo” para clonar (mantém classes/espacamento)
+    const $protoBtn = $nav.find("[data-tab]").first();
+    const dataGroup = $protoBtn.attr("data-group");
 
-    // 2) Botão da aba (se ainda não existir)
-    if (!$nav.find('[data-tab="hedron-tab"]').length) {
-      const $btn = $(`<a class="item" data-tab="hedron-tab">Hedron</a>`);
-      if (dataGroup) $btn.attr("data-group", dataGroup);
+    let $btn = $nav.find('[data-tab="hedron-tab"]');
+    if (!$btn.length) {
+      if ($protoBtn.length) {
+        $btn = $protoBtn.clone();
+        $btn.attr("data-tab", "hedron-tab");
+        if (dataGroup) $btn.attr("data-group", dataGroup);
+        $btn.removeClass("active"); // começa inativa
+        // se o proto tinha ícone + texto, mantemos estrutura e só trocamos label
+        if ($btn.text()?.trim()) $btn.text("Hedron");
+        else $btn.append(document.createTextNode("Hedron"));
+        // remove ícone se quiser simples:
+        // $btn.find("i, svg").remove();
+      } else {
+        $btn = $(`<a class="item" data-tab="hedron-tab">Hedron</a>`);
+        if (dataGroup) $btn.attr("data-group", dataGroup);
+      }
       $nav.append($btn);
     }
 
-    // 3) Área das abas (conteúdo)
+    // 3) Container da aba
     const $body = $html.find(".sheet-body, .sheet-content, section.sheet-body, form .sheet-body").first();
     if (!$body.length) return;
 
-    // 4) Container da aba (se ainda não existir)
-    if (!$html.find('section.tab[data-tab="hedron-tab"]').length) {
+    let $section = $html.find('section.tab[data-tab="hedron-tab"]');
+    if (!$section.length) {
       const groupAttr = dataGroup ? ` data-group="${dataGroup}"` : "";
-      $body.append(`<section class="tab hedron-tab" data-tab="hedron-tab"${groupAttr}></section>`);
+      $section = $(`<section class="tab hedron-tab" data-tab="hedron-tab"${groupAttr} style="display:none;"></section>`);
+      $body.append($section);
     }
 
-    // 5) Renderiza conteúdo
+    // 4) Renderiza conteúdo
     const tabHtml = await renderHedronTab(item);
-    $html.find('section.tab[data-tab="hedron-tab"]').html(tabHtml);
+    $section.html(tabHtml);
 
-    // 6) Liga listeners
-    activateHedronTabListeners($html, item);
+    // 5) Re-binda controllers das abas (se existirem)
+    bindAllTabsControllers(app, $html);
 
-    // 7) Re-binda controladores de abas
-    bindTabSystemTabs(app, $html);
+    // 6) Delegação de clique no container da NAV (não perde ao re-renderizar)
+    $nav.off("click.hedron").on("click.hedron", '[data-tab="hedron-tab"]', (ev) => {
+      ev.preventDefault();
+      activateHedronTab(app, $btn, $section, dataGroup);
+    });
+
+    // 7) Liga os listeners internos da aba (drop/remove) com delegação
+    wireHedronInner($section, item, $section);
 
   } catch (e) {
     console.error(`[${MODID}] Failed to inject Hedron tab`, e);
