@@ -285,30 +285,17 @@ class AnchorPad extends Application {
 }
 
 // ---------- Hooks ----------
-Hooks.once("ready", () => {
-  if (!game.anchorLinksPad) game.anchorLinksPad = new AnchorPad();
+// Botão extra na barra superior (cenas) — compat v13+
+Hooks.on("renderSceneNavigation", (_app, htmlEl) => {
+  const html = $(htmlEl);                     // <-- transforma em jQuery
+  if (html.find(".anchor-links-button").length) return; // evita duplicar
+  const $btn = $(
+    `<a class="anchor-links-button" style="display:flex;align-items:center;gap:6px;">
+       <i class="fas fa-link"></i> Anchor Links
+     </a>`
+  );
+  $btn.on("click", () => openPad());
+  html.find(".nav-controls").append($btn);
+});
 
-  // Botão no painel TOKEN (estável). Se não aparecer, use macro: openPad();
-  Hooks.on("getSceneControlButtons", (controls) => {
-    const tokenCtl = controls.find(c => c.name === "token");
-    const tool = {
-      name: "hedron-interface",
-      title: "Anchor Links",
-      icon: "fas fa-link",
-      button: true,
-      visible: true,
-      onClick: () => openPad(),
-      toggle: false
-    };
-    if (tokenCtl) tokenCtl.tools.push(tool);
-    else controls.push({ name: "hedron-interface", title: "Anchor Links", icon: "fas fa-link", layer: null, button: true, visible: true, onClick: () => openPad(), tools: [] });
-  });
-
-  // Botão extra na barra superior (se preferir)
-  Hooks.on("renderSceneNavigation", (_app, html) => {
-    if (html.find(".anchor-links-button").length) return;
-    const $btn = $(`<a class="anchor-links-button" style="display:flex;align-items:center;gap:6px;"><i class="fas fa-link"></i> Anchor Links</a>`);
-    $btn.on("click", () => openPad());
-    html.find(".nav-controls").append($btn);
-  });
 });
