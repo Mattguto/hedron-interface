@@ -1,4 +1,4 @@
-const MODID = "anchor-links-pad"; // usamos o mesmo módulo
+const MODID = "hedron-interface"; // usamos o mesmo módulo
 
 async function fromUuidSafe(uuid) {
   try { return await fromUuid(uuid); } catch { return null; }
