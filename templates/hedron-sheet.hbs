@@ -1,41 +1,44 @@
 <style>
-  .hedron-interface .slot {
-    border: 1px dashed var(--color-border-light-tertiary);
-    border-radius: 6px; padding: 8px; margin-bottom: 8px;
-    min-height: 44px; display:flex; align-items:center; justify-content:space-between;
+  .hedron-container { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+  .slot {
+    border: 2px dashed var(--color-border-light-tertiary);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    font-size: 13px;
+    min-height: 40px;
   }
-  .hedron-interface .slot.filled { border-style: solid; }
-  .hedron-interface .stone { display:flex; align-items:center; gap:8px; }
-  .hedron-interface .placeholder { opacity: .8; font-size: 12px; }
-  .hedron-interface .remove { cursor: pointer; opacity: .85; }
-  .hedron-interface .remove:hover { opacity: 1; }
+  .stone { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border: 1px solid var(--color-border-light-tertiary); border-radius: 4px; }
+  .remove { cursor: pointer; color: var(--color-text-dark-secondary); }
+  .remove:hover { color: red; }
 </style>
 
-<div class="hedron-interface">
+<div class="hedron-container">
   <h3>Hedron Interface</h3>
 
-  <div class="slot core {{#if slots.core}}filled{{/if}}" data-slot="core">
+  <div>
+    <label><strong>Core Ember</strong></label>
     {{#if slots.core}}
       <div class="stone" data-uuid="{{slots.core.uuid}}">
         {{slots.core.name}}
+        <a class="remove">✕</a>
       </div>
-      <a class="remove" title="Remover">✕</a>
     {{else}}
-      <span class="placeholder">Arraste um Core Ember Stone</span>
+      <div class="slot" data-slot="core">Arraste um Core Ember Stone</div>
     {{/if}}
   </div>
 
-  <h4>Ember Fragments</h4>
-  {{#each slots.fragments as |frag i|}}
-    <div class="slot fragment {{#if frag}}filled{{/if}}" data-slot="fragment-{{i}}">
+  <div>
+    <label><strong>Ember Fragments</strong></label>
+    {{#each slots.fragments as |frag i|}}
       {{#if frag}}
         <div class="stone" data-uuid="{{frag.uuid}}">
           {{frag.name}}
+          <a class="remove">✕</a>
         </div>
-        <a class="remove" title="Remover">✕</a>
       {{else}}
-        <span class="placeholder">Arraste Ember Fragment</span>
+        <div class="slot" data-slot="fragment-{{i}}">Arraste um Ember Fragment</div>
       {{/if}}
-    </div>
-  {{/each}}
+    {{/each}}
+  </div>
 </div>
