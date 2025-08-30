@@ -1,7 +1,6 @@
 const MODID = "hedron-interface";
 
 class HedronItemSheet extends ItemSheet {
-  /** Configurações da sheet */
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "hedron-interface-sheet",
@@ -13,14 +12,18 @@ class HedronItemSheet extends ItemSheet {
     });
   }
 
-  /** Diz ao Foundry quando usar essa sheet */
-  static isCompatible(item, options) {
+  /** intercepta a construção da sheet */
+  constructor(item, options) {
+    // se não for hedron, devolve a sheet padrão
     const bySlug = (item.system?.slug ?? item.slug) === "hedron-interface";
     const byFlag = item.getFlag(MODID, "isHedronInterface") === true;
-    return item.type === "equipment" && (bySlug || byFlag);
+    if (!(bySlug || byFlag)) {
+      // força a usar a sheet original registrada pelo sistema
+      return new game.itemSheets.get(item.type)(item, options);
+    }
+    super(item, options);
   }
 
-  /** Dados pro template */
   async getData(options) {
     const ctx = await super.getData(options);
     const slots = this.item.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] };
@@ -33,7 +36,6 @@ class HedronItemSheet extends ItemSheet {
     return ctx;
   }
 
-  /** Listeners de drag/drop */
   activateListeners(html) {
     super.activateListeners(html);
     const item = this.item;
@@ -77,9 +79,10 @@ class HedronItemSheet extends ItemSheet {
 }
 
 Hooks.once("ready", () => {
+  // registra como default pros equipments
   Items.registerSheet("pf2e", HedronItemSheet, {
     types: ["equipment"],
-    makeDefault: false,
+    makeDefault: true,
     label: "Hedron Interface Sheet"
   });
 });
