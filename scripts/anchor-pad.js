@@ -4,7 +4,7 @@ const TextEditorImpl =
   (window.TextEditor);
 
 // ---------- Helpers ----------
-const MODID = "anchor-links-pad";
+const MODID = "hedron-interface";
 function openPad() {
   if (game.anchorLinksPad?.rendered) return game.anchorLinksPad.bringToTop();
   game.anchorLinksPad.render(true);
@@ -292,7 +292,7 @@ Hooks.once("ready", () => {
   Hooks.on("getSceneControlButtons", (controls) => {
     const tokenCtl = controls.find(c => c.name === "token");
     const tool = {
-      name: "anchor-links-pad",
+      name: "hedron-interface",
       title: "Anchor Links",
       icon: "fas fa-link",
       button: true,
@@ -301,7 +301,7 @@ Hooks.once("ready", () => {
       toggle: false
     };
     if (tokenCtl) tokenCtl.tools.push(tool);
-    else controls.push({ name: "anchor-links-pad", title: "Anchor Links", icon: "fas fa-link", layer: null, button: true, visible: true, onClick: () => openPad(), tools: [] });
+    else controls.push({ name: "hedron-interface", title: "Anchor Links", icon: "fas fa-link", layer: null, button: true, visible: true, onClick: () => openPad(), tools: [] });
   });
 
   // Botão extra na barra superior (se preferir)
