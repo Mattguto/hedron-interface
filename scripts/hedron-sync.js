@@ -1,11 +1,11 @@
-const MODID = "hedron-interface"; // usamos o mesmo módulo
+const MODID = "hedron-interface";
 
 async function fromUuidSafe(uuid) {
   try { return await fromUuid(uuid); } catch { return null; }
 }
 
 function readHedronSlots(hedronItem) {
-  const slots = hedronItem.getFlag("hedron", "slots") ?? { core: null, fragments: [null, null] };
+  const slots = hedronItem.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] };
   const arr = [];
   if (slots.core) arr.push(slots.core);
   for (const f of (slots.fragments ?? [])) if (f) arr.push(f);
@@ -15,15 +15,15 @@ function readHedronSlots(hedronItem) {
 function actorHedrons(actor) {
   return actor.items.filter(i =>
     i.type === "equipment" &&
-    (i.slug === "hedron-interface" || i.getFlag("hedron", "isHedronInterface") === true)
+    (i.slug === "hedron-interface" || i.getFlag(MODID, "isHedronInterface") === true)
   );
 }
 
 function indexGranted(actor) {
   const bySource = { effects: new Map(), actions: new Map() };
   for (const it of actor.items) {
-    const src = it.getFlag("hedron", "sourceUuid");
-    const kind = it.getFlag("hedron", "grantKind"); // "effect" | "action"
+    const src = it.getFlag(MODID, "sourceUuid");
+    const kind = it.getFlag(MODID, "grantKind"); // "effect" | "action"
     if (src && kind === "effect") bySource.effects.set(src, it);
     if (src && kind === "action") bySource.actions.set(src, it);
   }
@@ -31,7 +31,7 @@ function indexGranted(actor) {
 }
 
 function readGrants(emberDoc) {
-  const g = emberDoc.getFlag("hedron", "grant") ?? {};
+  const g = emberDoc.getFlag(MODID, "grant") ?? {};
   const effects = Array.isArray(g.effects) ? g.effects : [];
   const actions = Array.isArray(g.actions) ? g.actions : [];
   return { effects, actions };
@@ -64,9 +64,9 @@ async function syncActor(actor) {
     const data = effDoc.toObject();
     data._id = undefined;
     data.flags ??= {};
-    data.flags.hedron ??= {};
-    data.flags.hedron.sourceUuid = effUuid;
-    data.flags.hedron.grantKind = "effect";
+    data.flags[MODID] ??= {};
+    data.flags[MODID].sourceUuid = effUuid;
+    data.flags[MODID].grantKind  = "effect";
     data.name = data.name ?? `Hedron Effect`;
     toCreateEffects.push(data);
   }
@@ -81,9 +81,9 @@ async function syncActor(actor) {
     const data = actDoc.toObject();
     data._id = undefined;
     data.flags ??= {};
-    data.flags.hedron ??= {};
-    data.flags.hedron.sourceUuid = actUuid;
-    data.flags.hedron.grantKind = "action";
+    data.flags[MODID] ??= {};
+    data.flags[MODID].sourceUuid = actUuid;
+    data.flags[MODID].grantKind  = "action";
     data.name = data.name ?? `Hedron Action`;
     toCreateActions.push(data);
   }
@@ -109,10 +109,10 @@ Hooks.once("ready", () => {
     try {
       const actor = item.actor; if (!actor) return;
       const flagChanged =
-        foundry.utils.getProperty(changes, "flags.hedron.slots") !== undefined ||
-        foundry.utils.getProperty(changes, "flags.hedron.isHedronInterface") !== undefined ||
-        foundry.utils.getProperty(changes, "flags.hedron.grant") !== undefined ||
-        foundry.utils.getProperty(changes, "flags.hedron.type") !== undefined ||
+        foundry.utils.getProperty(changes, `flags.${MODID}.slots`) !== undefined ||
+        foundry.utils.getProperty(changes, `flags.${MODID}.isHedronInterface`) !== undefined ||
+        foundry.utils.getProperty(changes, `flags.${MODID}.grant`) !== undefined ||
+        foundry.utils.getProperty(changes, `flags.${MODID}.type`) !== undefined ||
         item.slug === "hedron-interface";
       if (flagChanged) await syncActor(actor);
     } catch (e) { console.error(`[${MODID}] updateItem sync error`, e); }
