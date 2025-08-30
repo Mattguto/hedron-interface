@@ -2,7 +2,7 @@
   "id": "hedron-interface",
   "title": "Hedron Interface + Anchor Pad (PF2e)",
   "description": "Anchor Links Pad por jogador e item Hedron (Core + 2 Fragments) que aplica Effects/Actions no ator.",
-  "version": "1.9.5",
+  "version": "1.9.6",
   "compatibility": { "minimum": "11", "verified": "13" },
   "authors": [{ "name": "Mattguto", "url": "https://github.com/Mattguto" }],
   "esmodules": [
