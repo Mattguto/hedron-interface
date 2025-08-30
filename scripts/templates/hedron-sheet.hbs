@@ -1,0 +1,28 @@
+<div class="hedron-interface">
+  <h3>Hedron Slots</h3>
+
+  <div class="slot core {{#if slots.core}}filled{{/if}}" data-slot="core">
+    {{#if slots.core}}
+      <div class="stone" data-uuid="{{slots.core.uuid}}">
+        {{slots.core.name}}
+        <a class="remove" title="Remover">✕</a>
+      </div>
+    {{else}}
+      <span class="placeholder">Arraste um Core Ember Stone</span>
+    {{/if}}
+  </div>
+
+  <h4>Fragments</h4>
+  {{#each slots.fragments as |frag i|}}
+    <div class="slot fragment {{#if frag}}filled{{/if}}" data-slot="fragment-{{i}}">
+      {{#if frag}}
+        <div class="stone" data-uuid="{{frag.uuid}}">
+          {{frag.name}}
+          <a class="remove" title="Remover">✕</a>
+        </div>
+      {{else}}
+        <span class="placeholder">Arraste Ember Fragment</span>
+      {{/if}}
+    </div>
+  {{/each}}
+</div>
