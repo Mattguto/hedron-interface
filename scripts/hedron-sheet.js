@@ -1,27 +1,39 @@
 const MODID = "hedron-interface";
 
 class HedronItemSheet extends ItemSheet {
+  /** Configurações da sheet */
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "hedron-interface-sheet",
       classes: ["pf2e", "sheet", "item"],
       template: `modules/${MODID}/templates/hedron-sheet.hbs`,
       width: 400,
-      height: 500
+      height: 500,
+      resizable: true
     });
   }
 
+  /** Diz ao Foundry quando usar essa sheet */
+  static isCompatible(item, options) {
+    const bySlug = (item.system?.slug ?? item.slug) === "hedron-interface";
+    const byFlag = item.getFlag(MODID, "isHedronInterface") === true;
+    return item.type === "equipment" && (bySlug || byFlag);
+  }
+
+  /** Dados pro template */
   async getData(options) {
     const ctx = await super.getData(options);
-    // slots do Hedron
     const slots = this.item.getFlag(MODID, "slots") ?? { core: null, fragments: [null, null] };
     ctx.slots = {
       core: slots.core ? await fromUuid(slots.core) : null,
-      fragments: await Promise.all((slots.fragments ?? [null, null]).map(f => f ? fromUuid(f) : null))
+      fragments: await Promise.all(
+        (slots.fragments ?? [null, null]).map(f => f ? fromUuid(f) : null)
+      )
     };
     return ctx;
   }
 
+  /** Listeners de drag/drop */
   activateListeners(html) {
     super.activateListeners(html);
     const item = this.item;
@@ -64,7 +76,6 @@ class HedronItemSheet extends ItemSheet {
   }
 }
 
-// registra a sheet só para Hedron
 Hooks.once("ready", () => {
   Items.registerSheet("pf2e", HedronItemSheet, {
     types: ["equipment"],
