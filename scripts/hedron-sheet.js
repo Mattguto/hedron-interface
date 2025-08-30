@@ -12,16 +12,11 @@ class HedronItemSheet extends ItemSheet {
     });
   }
 
-  /** intercepta a construção da sheet */
-  constructor(item, options) {
-    // se não for hedron, devolve a sheet padrão
+  /** Foundry v13+: só aplica a Hedron */
+  static isApplicable(item, options) {
     const bySlug = (item.system?.slug ?? item.slug) === "hedron-interface";
     const byFlag = item.getFlag(MODID, "isHedronInterface") === true;
-    if (!(bySlug || byFlag)) {
-      // força a usar a sheet original registrada pelo sistema
-      return new game.itemSheets.get(item.type)(item, options);
-    }
-    super(item, options);
+    return item.type === "equipment" && (bySlug || byFlag);
   }
 
   async getData(options) {
@@ -79,10 +74,9 @@ class HedronItemSheet extends ItemSheet {
 }
 
 Hooks.once("ready", () => {
-  // registra como default pros equipments
   Items.registerSheet("pf2e", HedronItemSheet, {
     types: ["equipment"],
-    makeDefault: true,
+    makeDefault: false,  // só aplica se isApplicable() retornar true
     label: "Hedron Interface Sheet"
   });
 });
