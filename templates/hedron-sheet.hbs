@@ -3,14 +3,17 @@
   .slot {
     border: 2px dashed var(--color-border-light-tertiary);
     border-radius: 6px;
-    padding: 8px;
+    padding: 10px;
     text-align: center;
     font-size: 13px;
-    min-height: 40px;
+    min-height: 44px;
   }
-  .stone { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border: 1px solid var(--color-border-light-tertiary); border-radius: 4px; }
-  .remove { cursor: pointer; color: var(--color-text-dark-secondary); }
-  .remove:hover { color: red; }
+  .stone { display:flex; justify-content:space-between; align-items:center; gap:8px;
+           padding:6px 8px; border:1px solid var(--color-border-light-tertiary); border-radius:6px; }
+  .remove { cursor:pointer; opacity:.85; }
+  .remove:hover { opacity:1; color: red; }
+  h3 { margin: 0 0 6px 0; }
+  label { display:block; margin-bottom: 4px; }
 </style>
 
 <div class="hedron-container">
@@ -20,11 +23,11 @@
     <label><strong>Core Ember</strong></label>
     {{#if slots.core}}
       <div class="stone" data-uuid="{{slots.core.uuid}}">
-        {{slots.core.name}}
-        <a class="remove">✕</a>
+        <span>{{slots.core.name}}</span>
+        <a class="remove" title="Remover">✕</a>
       </div>
     {{else}}
-      <div class="slot" data-slot="core">Arraste um Core Ember Stone</div>
+      <div class="slot" data-slot="core">Arraste um <em>Core Ember Stone</em> aqui</div>
     {{/if}}
   </div>
 
@@ -33,11 +36,11 @@
     {{#each slots.fragments as |frag i|}}
       {{#if frag}}
         <div class="stone" data-uuid="{{frag.uuid}}">
-          {{frag.name}}
-          <a class="remove">✕</a>
+          <span>{{frag.name}}</span>
+          <a class="remove" title="Remover">✕</a>
         </div>
       {{else}}
-        <div class="slot" data-slot="fragment-{{i}}">Arraste um Ember Fragment</div>
+        <div class="slot" data-slot="fragment-{{i}}">Arraste um <em>Ember Fragment</em> aqui</div>
       {{/if}}
     {{/each}}
   </div>
