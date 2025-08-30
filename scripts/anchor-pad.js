@@ -3,11 +3,14 @@ const TextEditorImpl =
   (foundry?.applications?.ux?.TextEditor?.implementation) ?? // v13+
   (window.TextEditor);
 
+// Use o id do módulo como namespace de flags
+const ANCHOR_NS = "hedron-interface";
+
 // ---------- App ----------
 class AnchorPad extends Application {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      id: "anchor-links-pad",
+      id: "anchor-links-pad", // id da janela (pode manter assim)
       title: "Anchor Links",
       template: "modules/hedron-interface/templates/anchor-pad.hbs",
       width: 360,
@@ -16,12 +19,12 @@ class AnchorPad extends Application {
     });
   }
 
-  // Persistência por jogador (flags no User)
+  // Persistência por jogador (flags no User) — AGORA no namespace do módulo ativo
   async _getLinks() {
-    return game.user.getFlag("anchor-links-pad", "links") ?? [];
+    return game.user.getFlag(ANCHOR_NS, "links") ?? [];
   }
   async _setLinks(links) {
-    return game.user.setFlag("anchor-links-pad", "links", links);
+    return game.user.setFlag(ANCHOR_NS, "links", links);
   }
 
   async getData() {
@@ -114,7 +117,7 @@ class AnchorPad extends Application {
       await this._addLink({ uuid, label });
     });
 
-    // Abrir documento (usamos <button>, não <a href="#">)
+    // Abrir documento
     html.on("click", ".open-doc", async ev => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -160,7 +163,7 @@ function openPad() {
 Hooks.once("ready", () => {
   if (!game.anchorLinksPad) game.anchorLinksPad = new AnchorPad();
 
-  // Botão no painel TOKEN (estável). Se não aparecer, use a macro.
+  // Botão no painel TOKEN
   Hooks.on("getSceneControlButtons", (controls) => {
     const tokenCtl = controls.find(c => c.name === "token");
     const tool = {
