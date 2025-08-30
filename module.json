@@ -1,0 +1,16 @@
+{
+  "id": "hedron-interface",
+  "title": "Hedron Interface (PF2e)",
+  "description": "Item modular que aceita Ember Stones/Fragments e aplica efeitos.",
+  "version": "0.3.0",
+  "compatibility": { "minimum": "11", "verified": "13" },
+  "authors": [{ "name": "Mattguto" }],
+  "esmodules": [
+    "scripts/hedron-sheet.js",
+    "scripts/hedron-sync.js"
+  ],
+  "packs": [],
+  "manifest": "https://raw.githubusercontent.com/Mattguto/hedron-interface/main/module.json",
+  "download": "https://github.com/Mattguto/hedron-interface/archive/refs/heads/main.zip",
+  "url": "https://github.com/Mattguto/hedron-interface"
+}
