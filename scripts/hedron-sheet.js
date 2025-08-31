@@ -81,6 +81,35 @@ async function renderHedronOnly(item, $html) {
     await setSlots(item, newSlots);
     await renderHedronOnly(item, $html);
   });
+
+    // Abrir a ficha da Ember (clique)
+  $body.on("click.hedron", ".open-doc", async (ev) => {
+    ev.preventDefault();
+    const uuid = ev.currentTarget.dataset.uuid;
+    try {
+      const doc = await fromUuid(uuid);
+      if (!doc) return ui.notifications.warn("Documento não encontrado.");
+      doc.sheet?.render(true);
+    } catch (e) {
+      console.error(e);
+      ui.notifications.error("Falha ao abrir o documento.");
+    }
+  });
+
+  // Clique direito: copiar @UUID[...]
+  $body.on("contextmenu.hedron", ".open-doc", async (ev) => {
+    ev.preventDefault();
+    const uuid = ev.currentTarget.dataset.uuid;
+    const label = ev.currentTarget.textContent?.trim() || "link";
+    const text = `@UUID[${uuid}]{${label}}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      ui.notifications.info("Copiado: " + text);
+    } catch {
+      ui.notifications.warn("Não foi possível copiar para a área de transferência.");
+    }
+  });
+
 }
 
 // Intercepta o render de QUALQUER item; se for Hedron, mostra só a UI do Hedron
