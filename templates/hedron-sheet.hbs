@@ -8,8 +8,17 @@
     font-size: 13px;
     min-height: 44px;
   }
-  .stone { display:flex; justify-content:space-between; align-items:center; gap:8px;
-           padding:6px 8px; border:1px solid var(--color-border-light-tertiary); border-radius:6px; }
+  .stone {
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:6px 8px; border:1px solid var(--color-border-light-tertiary); border-radius:6px;
+  }
+  .stone .left { display:flex; align-items:center; gap:8px; }
+  .stone .icon {
+    width: 24px; height: 24px; border-radius: 4px; object-fit: cover;
+    border: 1px solid var(--color-border-light-tertiary);
+  }
+  .open-doc { all: unset; cursor: pointer; display:flex; align-items:center; gap:8px; }
+  .open-doc:hover { text-decoration: underline; }
   .remove { cursor:pointer; opacity:.85; }
   .remove:hover { opacity:1; color: red; }
   h3 { margin: 0 0 6px 0; }
@@ -23,7 +32,12 @@
     <label><strong>Core Ember</strong></label>
     {{#if slots.core}}
       <div class="stone" data-uuid="{{slots.core.uuid}}">
-        <span>{{slots.core.name}}</span>
+        <div class="left">
+          <button type="button" class="open-doc" data-uuid="{{slots.core.uuid}}" title="Abrir {{slots.core.name}}">
+            <img class="icon" src="{{slots.core.img}}" alt="" />
+            <span>{{slots.core.name}}</span>
+          </button>
+        </div>
         <a class="remove" title="Remover">✕</a>
       </div>
     {{else}}
@@ -36,7 +50,12 @@
     {{#each slots.fragments as |frag i|}}
       {{#if frag}}
         <div class="stone" data-uuid="{{frag.uuid}}">
-          <span>{{frag.name}}</span>
+          <div class="left">
+            <button type="button" class="open-doc" data-uuid="{{frag.uuid}}" title="Abrir {{frag.name}}">
+              <img class="icon" src="{{frag.img}}" alt="" />
+              <span>{{frag.name}}</span>
+            </button>
+          </div>
           <a class="remove" title="Remover">✕</a>
         </div>
       {{else}}
